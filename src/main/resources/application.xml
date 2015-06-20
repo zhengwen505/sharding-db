@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:aop="http://www.springframework.org/schema/aop" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans  
+               http://www.springframework.org/schema/beans/spring-beans-3.0.xsd  
+               http://www.springframework.org/schema/aop   
+               http://www.springframework.org/schema/aop/spring-aop-3.0.xsd  
+               http://www.springframework.org/schema/tx  
+               http://www.springframework.org/schema/tx/spring-tx-3.0.xsd  
+               http://www.springframework.org/schema/context  
+               http://www.springframework.org/schema/context/spring-context-3.0.xsd
+               http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd">
+	<context:component-scan base-package="com.jdbc.*" />
+
+	<aop:aspectj-autoproxy proxy-target-class="true"></aop:aspectj-autoproxy>
+	<bean id="myRouteImpl" class=" com.jdbc.route.myimpl.MyRouteImpl"></bean>
+	<bean id="routeParameter" class="com.jdbc.route.RouteParameter"></bean>
+	<bean id="routeInterceptor" class="com.jdbc.route.RouteInterceptor"></bean>
+	<bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
+		<property name="dataSource" ref="dataSourcesHolder"></property>
+	</bean>
+	<!-- core intercept jdbcTempalte excute sql -->
+	<bean
+		class="org.springframework.aop.framework.autoproxy.BeanNameAutoProxyCreator">
+		<property name="beanNames">
+			<value>jdbcTemplate</value>
+		</property>
+		<property name="interceptorNames">
+			<list>
+				<value>routeInterceptor</value>
+			</list>
+		</property>
+		<property name="proxyTargetClass">
+			<value>true</value>
+		</property>
+	</bean>
+	<bean
+		class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<list>
+				<value>classpath:database.properties</value>
+			</list>
+		</property>
+		<property name="fileEncoding" value="UTF-8" />
+		<property name="ignoreResourceNotFound" value="false" />
+		<property name="ignoreUnresolvablePlaceholders" value="true" />
+	</bean>
+	<bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>${db.driver}</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>${db.url}</value>
+		</property>
+		<property name="user">
+			<value>${db.username}</value>
+		</property>
+		<property name="password">
+			<value>${db.password}</value>
+		</property>
+		<property name="minPoolSize" value="10" />
+		<property name="maxPoolSize" value="100" />
+		<property name="maxIdleTime" value="1800" />
+		<property name="acquireIncrement" value="3" />
+		<property name="maxStatements" value="1000" />
+		<property name="initialPoolSize" value="10" />
+		<property name="idleConnectionTestPeriod" value="60" />
+		<property name="acquireRetryAttempts" value="30" />
+		<property name="breakAfterAcquireFailure" value="true" />
+		<property name="testConnectionOnCheckout" value="false" />
+	</bean>
+	<bean id="dataSource1" class="com.mchange.v2.c3p0.ComboPooledDataSource"
+		destroy-method="close">
+		<property name="driverClass">
+			<value>${db1.driver}</value>
+		</property>
+		<property name="jdbcUrl">
+			<value>${db1.url}</value>
+		</property>
+		<property name="user">
+			<value>${db1.username}</value>
+		</property>
+		<property name="password">
+			<value>${db1.password}</value>
+		</property>
+		<property name="minPoolSize" value="10" />
+		<property name="maxPoolSize" value="100" />
+		<property name="maxIdleTime" value="1800" />
+		<property name="acquireIncrement" value="3" />
+		<property name="maxStatements" value="1000" />
+		<property name="initialPoolSize" value="10" />
+		<property name="idleConnectionTestPeriod" value="60" />
+		<property name="acquireRetryAttempts" value="30" />
+		<property name="breakAfterAcquireFailure" value="true" />
+		<property name="testConnectionOnCheckout" value="false" />
+	</bean>
+	<bean id="dataSourcesHolder" class="com.jdbc.route.DataSourcesHolder">
+		<property name="datasources">
+			<map>
+				<entry key="1" value-ref="dataSource" />
+				<entry key="2" value-ref="dataSource1" />
+			</map>
+
+		</property>
+	</bean>
+	<tx:annotation-driven transaction-manager="txManager" />
+	<!-- it can't provide transaction ,doesn't work -->
+	<bean id="txManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+</beans>
