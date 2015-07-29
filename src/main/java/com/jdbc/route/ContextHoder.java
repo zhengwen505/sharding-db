@@ -9,8 +9,8 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  */
 public class ContextHoder {
-    public static InheritableThreadLocal<ConcurrentHashMap<String, Object>> holder = new InheritableThreadLocal<ConcurrentHashMap<String, Object>>();
-    public static String ROUTEPARA = "ROUTEPARA";
+    private static InheritableThreadLocal<ConcurrentHashMap<String, Object>> holder = new InheritableThreadLocal<ConcurrentHashMap<String, Object>>();
+    private static String ROUTEPARA = "ROUTEPARA";
     public static RouteParameter getRouteParameters() {
         ConcurrentHashMap<String, Object> data = holder.get();
         if (data == null) {
