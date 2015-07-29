@@ -12,6 +12,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 
+/**
+ * check datasources
+ * 
+ * @author zhengwen
+ * 
+ */
+
 public class HeartbeatThread implements InitializingBean {
     private static Logger logger = LoggerFactory.getLogger(HeartbeatThread.class);
     private DataSourcesHolder dataSourcesHolder;
@@ -32,33 +39,30 @@ public class HeartbeatThread implements InitializingBean {
             public void run() {
                 while (true) {
                     while (iterator.hasNext()) {
-                        Entry<String, DataSource> entry = iterator.next();
-                        DataSource dataSource = entry.getValue();
-                        Connection connection;
-                        try {
-                            connection = dataSource.getConnection();
-                            closeConnection(connection);
-                        } catch (SQLException e) {
-                            // get connection exception ,after five seconds try again；
-                            try {
-                                try {
-                                    Thread.sleep(5000);
-                                } catch (InterruptedException e1) {
-                                }
-                                connection = dataSource.getConnection();
-                                closeConnection(connection);
-                            } catch (SQLException e1) {
-                                // lose this connnetcion
-                                iterator.remove();
-                                logger.error("{} can't get connection", entry.getKey());
-                            }
-                        }
+                        checkDatasources(iterator, 0);
                     }
+                }
+            }
+            private void checkDatasources(final Iterator<Entry<String, DataSource>> iterator, int repeatTimes) {
+                Entry<String, DataSource> entry = iterator.next();
+                if (repeatTimes >= 3) {
+                    // lose this connnetcion
+                    iterator.remove();
+                    logger.error("{} can't get connection", entry.getKey());
+                }
+                DataSource dataSource = entry.getValue();
+                Connection connection;
+                try {
+                    connection = dataSource.getConnection();
+                    closeConnection(connection);
+                } catch (SQLException e) {
+                    // get connection exception ,after five seconds try again；
                     // after five minutes poll again
                     try {
                         Thread.sleep(5 * 1000 * 60);
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException e2) {
                     }
+                    checkDatasources(iterator, repeatTimes++);
                 }
             }
         };
